@@ -23,11 +23,12 @@ public with sharing class TrainingMgmt_Controller {
     public static GetTrainingsResult getTrainings(String searchKey, Decimal minRating) {
         final Boolean isSuper = FeatureManagement.checkPermission('Manage_All_Trainings');
 
-        // Build WHERE dynamically (no "1=1")
+        // Build WHERE dynamically (no 1=1; no ESCAPE clause)
         List<String> filters = new List<String>();
         if (!String.isBlank(searchKey)) {
-            String likeVal = '%' + searchKey.replace('%','\\%').replace('_','\\_') + '%';
-            filters.add('Name LIKE \'' + String.escapeSingleQuotes(likeVal) + '\' ESCAPE \'\\\\\'');
+            // Only escape single quotes; let % and _ act as wildcards
+            String likeVal = '%' + String.escapeSingleQuotes(searchKey.trim()) + '%';
+            filters.add('Name LIKE \'' + likeVal + '\'');
         }
         if (minRating != null) {
             filters.add('Rating__c >= ' + String.valueOf(minRating));
@@ -42,11 +43,11 @@ public with sharing class TrainingMgmt_Controller {
             soql += ' WHERE ' + String.join(filters, ' AND ');
         }
 
-        // WITH SECURITY_ENFORCED must be after WHERE and before ORDER/LIMIT
+        // Correct placement of WITH SECURITY_ENFORCED
         soql += ' WITH SECURITY_ENFORCED ORDER BY CreatedDate DESC LIMIT 200';
 
         List<Training__c> q = Database.query(soql);
-
+        
         // FLS: strip non-readable fields from the result
         SObjectAccessDecision dec = Security.stripInaccessible(AccessType.READABLE, q);
         List<Training__c> safe = (List<Training__c>) dec.getRecords();
