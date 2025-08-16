@@ -1,13 +1,24 @@
+
 .toolbar {
-    display: grid;
-    grid-template-columns: 1fr 160px 120px;
-    gap: 0.75rem;
-    align-items: end;
     margin: 0 1rem 1rem 1rem;
   }
-  .minwidth { min-width: 140px; }
-  .apply-btn { justify-self: start; }
+  .toolbar lightning-layout {
+    width: 100%;
+  }
+  /* Remove old min-width clamp so inputs can shrink gracefully */
+  .minwidth { min-width: 0; }
   
+  /* Make Apply button full-width on small screens, inline on larger screens */
+  .toolbar-btn-wrap .apply-btn {
+    width: 100%;
+  }
+  @media (min-width: 48rem) { /* ~768px */
+    .toolbar-btn-wrap .apply-btn {
+      width: auto;
+    }
+  }
+  
+  /* Existing styles (cards/grid) */
   .super-hint {
     display: flex;
     align-items: center;
@@ -44,7 +55,7 @@
     transition: background .2s ease, outline-color .2s ease; /* NEW: smooth visual change */
   }
   
-  /* NEW: visual state when already enrolled (applies immediately via dynamic class) */
+  /* Visual state when already enrolled (applies immediately via dynamic class) */
   .tile--enrolled {
     outline: 2px solid #c8e6c9;
     background: #f6fffa;
@@ -79,7 +90,7 @@
     border-color: #faebcc;
   }
   
-  /* NEW: enrolled status badge (used when button is hidden) */
+  /* Enrolled status badge (used when button is hidden) */
   .badge-ok {
     margin-left: auto;
     font-size: 0.7rem;
@@ -127,7 +138,7 @@
   }
   .enroll-btn { margin-top: .5rem; }
   
-  /* NEW: soften disabled button look */
+  /* Soften disabled button look */
   .enroll-btn[disabled] {
     opacity: .6;
     cursor: not-allowed;

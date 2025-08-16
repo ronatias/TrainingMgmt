@@ -2,32 +2,43 @@
     <lightning-card title="Training Explorer" icon-name="utility:education">
       <!-- Toolbar -->
       <div class="toolbar">
-        <lightning-input
-          type="search"
-          label="Search trainings"
-          value={searchKey}
-          onchange={handleSearchChange}
-          placeholder="Search by name..."
-        ></lightning-input>
-  
-        <lightning-combobox
-          class="minwidth"
-          label="Min rating"
-          value={minRatingStr}
-          placeholder="Any"
-          options={ratingOptions}
-          onchange={handleRatingChange}
-        >
-        </lightning-combobox>
-  
-        <lightning-button
-          variant="brand"
-          label="Apply"
-          title="Apply Filters"
-          onclick={refresh}
-          class="apply-btn"
-        >
-        </lightning-button>
+        <!-- NEW: Responsive layout that stacks on small screens and aligns inline on medium+ -->
+        <lightning-layout multiple-rows pull-to-boundary="small">
+          <lightning-layout-item size="12" medium-device-size="6" padding="horizontal-small">
+            <lightning-input
+              type="search"
+              label="Search trainings"
+              variant="label-hidden"   
+              value={searchKey}
+              onchange={handleSearchChange}
+              placeholder="Search by name..."
+            ></lightning-input>
+          </lightning-layout-item>
+
+          <lightning-layout-item size="12" medium-device-size="3" padding="horizontal-small">
+            <lightning-combobox
+              class="minwidth"
+              label="Min rating"
+              variant="label-hidden"               
+              value={minRatingStr}
+              placeholder="Min rating"
+              options={ratingOptions}
+              onchange={handleRatingChange}
+            >
+            </lightning-combobox>
+          </lightning-layout-item>
+
+          <lightning-layout-item size="12" medium-device-size="3" padding="horizontal-small" class="toolbar-btn-wrap">
+            <lightning-button
+              variant="brand"
+              label="Apply"
+              title="Apply Filters"
+              onclick={refresh}
+              class="apply-btn"
+            >
+            </lightning-button>
+          </lightning-layout-item>
+        </lightning-layout>
       </div>
   
       <!-- Super user hint -->
