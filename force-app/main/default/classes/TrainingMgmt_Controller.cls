@@ -1,17 +1,38 @@
 public with sharing class TrainingMgmt_Controller {
 
+    
+    //Permission Set fallback for super access
+    private static final Set<String> SUPER_PERMISSIONSETS = new Set<String>{ 'Manage_All_Trainings' };
+
+    // Cache the result per transaction
+    private static Boolean isSuperCache;
+
+    // Returns true if the running user is assigned to any of the configured SUPER_PERMISSIONSETS
+    private static Boolean hasSuperAccess() {
+        if (isSuperCache != null) return isSuperCache;
+
+        // Check permission set membership by API Name
+        Integer cnt = [
+            SELECT Count()
+            FROM PermissionSetAssignment
+            WHERE AssigneeId = :UserInfo.getUserId()
+            AND PermissionSet.Name IN :SUPER_PERMISSIONSETS
+        ];
+        isSuperCache = (cnt > 0);
+        return isSuperCache;
+    }
     // ===== DTOs =====
     public class TrainingRowDTO {
         @AuraEnabled public Id id;
         @AuraEnabled public String name;
-        @AuraEnabled public String trainerName;         // Text
-        @AuraEnabled public Decimal rating;             // Number(16,2)
-        @AuraEnabled public String department;          // super users only (and FLS)
-        @AuraEnabled public Boolean isConfidential;     // super users only (and FLS)
-        @AuraEnabled public String externalCourseId;    // super users only (and FLS)
-        @AuraEnabled public Boolean canEnroll;          // UI convenience: user can create TE + not already enrolled
-        @AuraEnabled public Boolean isSuperUser;        // has Manage_All_Trainings
-        @AuraEnabled public Boolean alreadyEnrolled;    // NEW: user already enrolled to this training
+        @AuraEnabled public String trainerName;         // from Trainer__c (Text)
+        @AuraEnabled public Decimal rating;             // Rating__c
+        @AuraEnabled public String department;          // sent when FLS allows (UI decides visibility)
+        @AuraEnabled public Boolean isConfidential;     // sent when FLS allows (UI decides visibility)
+        @AuraEnabled public String externalCourseId;    // sent when FLS allows (UI decides visibility)
+        @AuraEnabled public Boolean canEnroll;          // UI convenience
+        @AuraEnabled public Boolean isSuperUser;        // has super access (perm set or custom perm)
+        @AuraEnabled public Boolean alreadyEnrolled;    // current user already enrolled?
     }
 
     public class GetTrainingsResult {
@@ -19,13 +40,15 @@ public with sharing class TrainingMgmt_Controller {
         @AuraEnabled public Boolean isSuperUser;
     }
 
+    // ===== Query visible trainings (search + min rating) =====
     @AuraEnabled(cacheable=true)
     public static GetTrainingsResult getTrainings(String searchKey, Decimal minRating) {
-        final Boolean isSuper = FeatureManagement.checkPermission('Manage_All_Trainings');
+        final Boolean isSuper = hasSuperAccess(); // NEW: respects Permission Set membership
 
-        // Build WHERE dynamically (no 1=1)
+        // Build WHERE dynamically
         List<String> filters = new List<String>();
         if (!String.isBlank(searchKey)) {
+            //Escape single quotes; let % and _ act as wildcards for user-friendly search
             String likeVal = '%' + String.escapeSingleQuotes(searchKey.trim()) + '%';
             filters.add('Name LIKE \'' + likeVal + '\'');
         }
@@ -37,12 +60,17 @@ public with sharing class TrainingMgmt_Controller {
             'SELECT Id, Name, Trainer__c, External_Course_Id__c, Rating__c, ' +
             '       Department__c, Is_Confidential__c ' +
             'FROM Training__c';
+
         if (!filters.isEmpty()) {
             soql += ' WHERE ' + String.join(filters, ' AND ');
         }
+
+        // WITH SECURITY_ENFORCED must be after WHERE and before ORDER/LIMIT
         soql += ' WITH SECURITY_ENFORCED ORDER BY CreatedDate DESC LIMIT 200';
 
         List<Training__c> q = Database.query(soql);
+
+        // FLS: strip non-readable fields from the result (any non-readable fields are nulled)
         SObjectAccessDecision dec = Security.stripInaccessible(AccessType.READABLE, q);
         List<Training__c> safe = (List<Training__c>) dec.getRecords();
 
@@ -56,17 +84,14 @@ public with sharing class TrainingMgmt_Controller {
             for (Training_Enrollment__c te : [
                 SELECT Training__c
                 FROM Training_Enrollment__c
-                WHERE Employee__c = :UserInfo.getUserId() AND Training__c IN :trainingIds
+                WHERE Employee__c = :UserInfo.getUserId()
+                AND Training__c IN :trainingIds
                 WITH SECURITY_ENFORCED
             ]) {
                 if (te.Training__c != null) already.add(te.Training__c);
             }
         }
 
-        // Per-field FLS checks for super-only fields (used alongside custom permission)
-        Boolean deptReadable  = SecurityUtil.canReadField(Training__c.Department__c);
-        Boolean confReadable  = SecurityUtil.canReadField(Training__c.Is_Confidential__c);
-        Boolean extIdReadable = SecurityUtil.canReadField(Training__c.External_Course_Id__c);
         Boolean canCreateEnrollment = Schema.sObjectType.Training_Enrollment__c.isCreateable();
 
         List<TrainingRowDTO> rows = new List<TrainingRowDTO>();
@@ -74,12 +99,15 @@ public with sharing class TrainingMgmt_Controller {
             TrainingRowDTO dto = new TrainingRowDTO();
             dto.id = t.Id;
             dto.name = t.Name;
-            dto.trainerName = (String)t.get('Trainer__c');
+            dto.trainerName = (String)t.get('Trainer__c'); // text
             dto.rating = (Decimal)t.get('Rating__c');
 
-            dto.department       = (isSuper && deptReadable)  ? (String)t.get('Department__c')         : null;
-            dto.isConfidential   = (isSuper && confReadable)  ? (Boolean)t.get('Is_Confidential__c')   : null;
-            dto.externalCourseId = (isSuper && extIdReadable) ? (String)t.get('External_Course_Id__c') : null;
+            // IMPORTANT: send fields when FLS allows (stripInaccessible already nulled non-readable ones).
+            // The LWC will decide whether to show them based on isSuperUser.
+            // Always map these (subject to FLS) — do NOT gate by isSuper here
+            dto.department       = (String)t.get('Department__c');
+            dto.isConfidential   = (Boolean)t.get('Is_Confidential__c');
+            dto.externalCourseId = (String)t.get('External_Course_Id__c');
 
             dto.alreadyEnrolled = already.contains(t.Id);
             dto.canEnroll       = canCreateEnrollment && !dto.alreadyEnrolled;
@@ -94,7 +122,7 @@ public with sharing class TrainingMgmt_Controller {
         return res;
     }
 
-    // ===== Enroll current user in a training (unchanged) =====
+    // ===== Enroll current user in a training =====
     public class EnrollResult {
         @AuraEnabled public Boolean success;
         @AuraEnabled public String message;
@@ -105,17 +133,24 @@ public with sharing class TrainingMgmt_Controller {
     public static EnrollResult enrollMe(Id trainingId) {
         EnrollResult out = new EnrollResult();
 
+        // CRUD guard
         if (!Schema.sObjectType.Training_Enrollment__c.isCreateable()) {
-            out.success = false; out.message = 'You do not have permission to enroll.'; return out;
+            out.success = false;
+            out.message = 'You do not have permission to enroll.';
+            return out;
         }
 
+        // Verify the training exists AND is readable to the running user
         Training__c tr;
         try {
             tr = [SELECT Id FROM Training__c WHERE Id = :trainingId WITH SECURITY_ENFORCED LIMIT 1];
         } catch (Exception e) {
-            out.success = false; out.message = 'You do not have access to this training.'; return out;
+            out.success = false;
+            out.message = 'You do not have access to this training.';
+            return out;
         }
 
+        // Build enrollment; trigger will set OwnerId/Enrollment_Key__c; sharing/enforcement handled there
         Training_Enrollment__c te = new Training_Enrollment__c(
             Employee__c = UserInfo.getUserId(),
             Training__c = tr.Id,
@@ -123,12 +158,20 @@ public with sharing class TrainingMgmt_Controller {
             Enrollment_Date__c = Date.today()
         );
 
+        // FLS: strip non-creatable fields defensively
         List<Training_Enrollment__c> toInsert = new List<Training_Enrollment__c>{ te };
         SObjectAccessDecision decCreate = Security.stripInaccessible(AccessType.CREATABLE, toInsert);
         List<Training_Enrollment__c> safeInsert = (List<Training_Enrollment__c>) decCreate.getRecords();
 
+        //If everything got stripped due to FLS, bail gracefully
+        if (safeInsert.isEmpty()) {
+            out.success = false;
+            out.message = 'You do not have permission to enroll.';
+            return out;
+        }
+
         try {
-            insert safeInsert;
+            insert safeInsert;  // unique Enrollment_Key__c prevents duplicates; trigger handles owner
             out.success = true;
             out.enrollmentId = safeInsert[0].Id;
             out.message = 'You have been enrolled.';

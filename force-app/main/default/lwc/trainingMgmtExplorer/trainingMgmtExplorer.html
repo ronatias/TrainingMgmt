@@ -34,7 +34,7 @@
       <template if:true={isSuperUser}>
         <div class="super-hint">
           <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
-          <span>You have elevated access (Manage_All_Trainings).</span>
+          <span>You have elevated access (Manage All Trainings Permission).</span>
         </div>
       </template>
   
@@ -79,7 +79,7 @@
                 <!-- Super users see additional fields (already FLS-filtered by server) -->
                 <template if:true={isSuperUser}>
                   <template if:true={r.department}>
-                    <div class="meta-row highlight">
+                    <div class="meta-row">
                       <span class="label">Department</span>
                       <span class="value">{r.department}</span>
                     </div>
