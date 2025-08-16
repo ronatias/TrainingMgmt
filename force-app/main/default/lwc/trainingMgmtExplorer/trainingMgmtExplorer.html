@@ -1,0 +1,121 @@
+<template>
+    <lightning-card title="Training Explorer" icon-name="utility:education">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <lightning-input
+          type="search"
+          label="Search trainings"
+          value={searchKey}
+          onchange={handleSearchChange}
+          placeholder="Search by name..."
+        ></lightning-input>
+  
+        <lightning-combobox
+          class="minwidth"
+          label="Min rating"
+          value={minRatingStr}
+          placeholder="Any"
+          options={ratingOptions}
+          onchange={handleRatingChange}
+        >
+        </lightning-combobox>
+  
+        <lightning-button
+          variant="brand"
+          label="Apply"
+          title="Apply Filters"
+          onclick={refresh}
+          class="apply-btn"
+        >
+        </lightning-button>
+      </div>
+  
+      <!-- Super user hint -->
+      <template if:true={isSuperUser}>
+        <div class="super-hint">
+          <lightning-icon icon-name="utility:success" size="x-small"></lightning-icon>
+          <span>You have elevated access (Manage_All_Trainings).</span>
+        </div>
+      </template>
+  
+      <!-- Loading -->
+      <template if:true={loading}>
+        <div class="spinner-wrap">
+          <lightning-spinner alternative-text="Loading trainings" size="medium"></lightning-spinner>
+        </div>
+      </template>
+  
+      <!-- Results grid -->
+      <template if:true={rows.length}>
+        <div class="grid">
+          <template for:each={rows} for:item="r">
+            <article key={r.id} class="tile slds-card slds-p-around_small">
+              <div class="tile-header">
+                <lightning-icon icon-name="utility:table" size="small"></lightning-icon>
+                <h3 class="name" title={r.name}>{r.name}</h3>
+  
+                <template if:true={r.isConfidential}>
+                  <span class="badge badge-warn" title="Confidential">Confidential</span>
+                </template>
+              </div>
+  
+              <div class="meta">
+                <div class="meta-row">
+                  <span class="label">Trainer</span>
+                  <span class="value">{r.trainerName}</span>
+                </div>
+  
+                <div class="meta-row">
+                  <span class="label">Rating</span>
+                  <span class="value">
+                    <template for:each={r.stars} for:item="s">
+                      <lightning-icon key={s} icon-name="utility:favorite" size="x-small" class="star"></lightning-icon>
+                    </template>
+                    <span class="rating-num">({r.rating})</span>
+                  </span>
+                </div>
+  
+                <!-- Super users see additional fields (already FLS-filtered by server) -->
+                <template if:true={isSuperUser}>
+                  <template if:true={r.department}>
+                    <div class="meta-row highlight">
+                      <span class="label">Department</span>
+                      <span class="value">{r.department}</span>
+                    </div>
+                  </template>
+  
+                  <template if:true={r.externalCourseId}>
+                    <div class="meta-row">
+                      <span class="label">External Course Id</span>
+                      <span class="value code">{r.externalCourseId}</span>
+                    </div>
+                  </template>
+                </template>
+              </div>
+  
+              <div class="actions">
+                <template if:true={r.canEnroll}>
+                  <lightning-button
+                    variant="brand-outline"
+                    label="Enroll Me"
+                    data-id={r.id}
+                    onclick={handleEnroll}
+                    class="enroll-btn"
+                  ></lightning-button>
+                </template>
+              </div>
+            </article>
+          </template>
+        </div>
+      </template>
+  
+      <!-- Empty state -->
+      <template if:false={rows.length}>
+        <div class="empty">
+          <lightning-icon icon-name="utility:search" size="small"></lightning-icon>
+          <div>No trainings match your filters.</div>
+        </div>
+      </template>
+    </lightning-card>
+  </template>
+  

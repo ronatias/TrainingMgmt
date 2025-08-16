@@ -1,0 +1,119 @@
+.toolbar {
+    display: grid;
+    grid-template-columns: 1fr 160px 120px;
+    gap: 0.75rem;
+    align-items: end;
+    margin: 0 1rem 1rem 1rem;
+  }
+  .minwidth { min-width: 140px; }
+  .apply-btn { justify-self: start; }
+  
+  .super-hint {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0 .95rem .5rem .95rem;
+    padding: .4rem .6rem;
+    background: #f2fbf4;
+    border: 1px solid #d7f2dc;
+    color: #20744a;
+    border-radius: .5rem;
+    font-size: 0.85rem;
+  }
+  
+  .spinner-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    padding: 0 1rem 1rem 1rem;
+  }
+  
+  .tile {
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    background: white;
+    display: flex;
+    flex-direction: column;
+    min-height: 170px;
+  }
+  
+  .tile-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    margin-bottom: .25rem;
+  }
+  
+  .name {
+    font-size: 1rem;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    padding: .15rem .4rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+  }
+  .badge-warn {
+    color: #8a6d3b;
+    background: #fcf8e3;
+    border-color: #faebcc;
+  }
+  
+  .meta {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.87rem;
+  }
+  
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed #f0f2f5;
+    padding: .25rem 0;
+  }
+  
+  .meta-row .label { color: #576574; }
+  .meta-row .value { font-weight: 600; }
+  .meta-row .value.code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-weight: 500;
+  }
+  
+  .meta-row.highlight {
+    background: #f7fbff;
+    border-radius: .5rem;
+    padding: .35rem .5rem;
+  }
+  
+  .star { margin-right: 2px; }
+  .rating-num { margin-left: 4px; color: #888; }
+  
+  .actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: .5rem;
+  }
+  .enroll-btn { margin-top: .5rem; }
+  
+  .empty {
+    display: grid;
+    place-items: center;
+    color: #7f8c8d;
+    padding: 1.5rem;
+    gap: .5rem;
+  }
+  
