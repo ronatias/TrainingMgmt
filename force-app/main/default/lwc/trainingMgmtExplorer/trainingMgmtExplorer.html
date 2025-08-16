@@ -49,7 +49,8 @@
       <template if:true={rows.length}>
         <div class="grid">
           <template for:each={rows} for:item="r">
-            <article key={r.id} class="tile slds-card slds-p-around_small">
+            <!-- NEW: bind a dynamic class so style changes immediately without reload -->
+            <article key={r.id} class={r.tileClass}>
               <div class="tile-header">
                 <lightning-icon icon-name="utility:table" size="small"></lightning-icon>
                 <h3 class="name" title={r.name}>{r.name}</h3>
@@ -94,14 +95,25 @@
               </div>
   
               <div class="actions">
-                <template if:true={r.canEnroll}>
+                <!-- Button shows Enroll Me or Enrolled (disabled) based on row state -->
+                <!-- NEW: always show the button when user can enroll OR is already enrolled -->
+                <template if:true={r.showButton}>
+                  <!-- NEW: dynamic variant switches to 'success' when enrolled so it appears green even when disabled -->
                   <lightning-button
-                    variant="brand-outline"
-                    label="Enroll Me"
+                    variant={r.buttonVariant}
+                    label={r.enrollLabel}
                     data-id={r.id}
                     onclick={handleEnroll}
+                    disabled={r.enrollDisabled}
                     class="enroll-btn"
                   ></lightning-button>
+                </template>
+
+                <!-- If user cannot enroll and is not enrolled, hide the button (keep existing empty state) -->
+                <template if:false={r.showButton}>
+                  <template if:true={r.alreadyEnrolled}>
+                    <span class="badge badge-ok">Enrolled</span>
+                  </template>
                 </template>
               </div>
             </article>
@@ -118,4 +130,3 @@
       </template>
     </lightning-card>
   </template>
-  

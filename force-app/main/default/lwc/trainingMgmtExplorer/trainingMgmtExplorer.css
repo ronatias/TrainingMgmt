@@ -41,6 +41,13 @@
     display: flex;
     flex-direction: column;
     min-height: 170px;
+    transition: background .2s ease, outline-color .2s ease; /* NEW: smooth visual change */
+  }
+  
+  /* NEW: visual state when already enrolled (applies immediately via dynamic class) */
+  .tile--enrolled {
+    outline: 2px solid #c8e6c9;
+    background: #f6fffa;
   }
   
   .tile-header {
@@ -70,6 +77,17 @@
     color: #8a6d3b;
     background: #fcf8e3;
     border-color: #faebcc;
+  }
+  
+  /* NEW: enrolled status badge (used when button is hidden) */
+  .badge-ok {
+    margin-left: auto;
+    font-size: 0.7rem;
+    padding: .15rem .4rem;
+    border-radius: 8px;
+    color: #1b5e20;
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
   }
   
   .meta {
@@ -108,6 +126,12 @@
     padding-top: .5rem;
   }
   .enroll-btn { margin-top: .5rem; }
+  
+  /* NEW: soften disabled button look */
+  .enroll-btn[disabled] {
+    opacity: .6;
+    cursor: not-allowed;
+  }
   
   .empty {
     display: grid;
