@@ -1,6 +1,5 @@
 public with sharing class TrainingMgmt_Controller {
 
-    
     //Permission Set fallback for super access
     private static final Set<String> SUPER_PERMISSIONSETS = new Set<String>{ 'Manage_All_Trainings' };
 
@@ -43,7 +42,7 @@ public with sharing class TrainingMgmt_Controller {
     // ===== Query visible trainings (search + min rating) =====
     @AuraEnabled(cacheable=true)
     public static GetTrainingsResult getTrainings(String searchKey, Decimal minRating) {
-        final Boolean isSuper = hasSuperAccess(); // NEW: respects Permission Set membership
+        final Boolean isSuper = hasSuperAccess(); // Respects Permission Set membership
 
         // Build WHERE dynamically
         List<String> filters = new List<String>();
