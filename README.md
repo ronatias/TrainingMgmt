@@ -18,7 +18,7 @@ This guide walks you through deploying the **Training Management** package and s
 
 **What you need**
 
-- The file: **`TrainingMgmt_deployable.zip`** _(single package, `package.xml` at the ZIP root)_
+- The file: **`TrainingMgmt_deployable.zip`** _(single package, `package.xml`)_
 - **Admin** access to the target org
 
 **Steps**
