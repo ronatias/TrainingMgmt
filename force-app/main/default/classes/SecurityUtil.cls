@@ -8,6 +8,9 @@ public class SecurityUtil {
         return f.getDescribe().isCreateable();
     }
 
+/*
+    //FOR Future use if needed 
+
     public static Boolean canReadField(Schema.SObjectField f) {
         return f.getDescribe().isAccessible();
     }
@@ -19,4 +22,5 @@ public class SecurityUtil {
     public static Boolean canReadObject(Schema.SObjectType t) {
         return t.getDescribe().isAccessible();
     }
+*/
 }
