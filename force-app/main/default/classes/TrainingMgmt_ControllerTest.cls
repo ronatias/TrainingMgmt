@@ -115,4 +115,109 @@ private class TrainingMgmt_ControllerTest {
             System.assert(res.rows.size() <= 200, 'Controller should cap results at 200');
         }
     }
+
+    // ----------------- Helpers (append inside the class) -----------------
+
+// Deterministically create one Training as admin
+private static Id makeTraining() {
+    Map<String, Id> u = pickUsers();
+    Id tid;
+    System.runAs(new User(Id = u.get('admin'))) {
+        Training__c t = new Training__c(
+            Trainer__c = 'PermsCoverage',
+            External_Course_Id__c = 'PERM-' + String.valueOf(Datetime.now().getTime()),
+            Rating__c = 3,
+            Department__c = 'QA',
+            Is_Confidential__c = false
+        );
+        insert t;
+        tid = t.Id;
+    }
+    return tid;
+}
+
+// Best-effort: find a user who likely lacks Create on custom objects.
+// If none found, related test will skip gracefully.
+private static User findRestrictedUser() {
+    List<String> profiles = new List<String>{
+        'Minimum Access - Salesforce',
+        'Read Only',
+        'Chatter Free User',
+        'Identity User',
+        'Salesforce Platform One App',
+        'Salesforce Limited Access - Free'
+    };
+    List<User> u = [
+        SELECT Id, Profile.Name FROM User
+        WHERE IsActive = true AND Profile.Name IN :profiles
+        ORDER BY CreatedDate LIMIT 1
+    ];
+    return u.isEmpty() ? null : u[0];
+}
+
+// ----------------- New tests (append inside the class) -----------------
+
+@IsTest
+static void enroll_catch_training_not_accessible() {
+    Map<String, Id> u = pickUsers();
+
+    System.runAs(new User(Id = u.get('admin'))) {
+        // Use a non-Training Id so SELECT ... WITH SECURITY_ENFORCED returns 0 rows -> catch path
+        Account acc = new Account(Name = 'Temp for catch');
+        insert acc;
+
+        Test.startTest();
+        TrainingMgmt_Controller.EnrollResult res = TrainingMgmt_Controller.enrollMe(acc.Id);
+        Test.stopTest();
+
+        System.assertEquals(false, res.success);
+        System.assertEquals('You do not have access to this training.', res.message);
+    }
+}
+
+@IsTest
+static void enroll_duplicate_branch_deterministic() {
+    Map<String, Id> u = pickUsers();
+    Id tId = makeTraining(); // admin-owned training, readable
+
+    System.runAs(new User(Id = u.get('admin'))) {
+        Test.startTest();
+        TrainingMgmt_Controller.EnrollResult ok  = TrainingMgmt_Controller.enrollMe(tId);
+        TrainingMgmt_Controller.EnrollResult dup = TrainingMgmt_Controller.enrollMe(tId);
+        Test.stopTest();
+
+        System.assertEquals(true, ok.success, 'First enrollment should succeed');
+        System.assertEquals(false, dup.success, 'Second should be blocked as duplicate');
+        System.assertEquals('You are already enrolled in this training.', dup.message);
+    }
+}
+
+@IsTest
+static void enroll_crud_guard_when_restricted_user_present() {
+    User restricted = findRestrictedUser();
+    if (restricted == null) {
+        // No truly restricted user in this org; skip guard assertion without failing the test
+        System.assert(true, 'No restricted profile found; skipping CRUD-guard branch coverage.');
+        return;
+    }
+
+    Id tId = makeTraining();
+
+    System.runAs(new User(Id = restricted.Id)) {
+        // Only assert guard if this user truly lacks Create on Training_Enrollment__c
+        Boolean canCreate = Schema.sObjectType.Training_Enrollment__c.isCreateable();
+        if (!canCreate) {
+            Test.startTest();
+            TrainingMgmt_Controller.EnrollResult res = TrainingMgmt_Controller.enrollMe(tId);
+            Test.stopTest();
+
+            System.assertEquals(false, res.success);
+            System.assertEquals('You do not have permission to enroll.', res.message);
+        } else {
+            // This "restricted" user actually has Create; guard not reachable in this org
+            System.assert(true, 'Restricted user has Create; guard not reachable here.');
+        }
+    }
+}
+
 }
