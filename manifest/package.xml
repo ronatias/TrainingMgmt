@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+
+  <!-- Apex (all classes: handlers, queueables, tests, etc.) -->
+  <types>
+    <members>*</members>
+    <name>ApexClass</name>
+  </types>
+
+  <!-- Apex Triggers (all) -->
+  <types>
+    <members>*</members>
+    <name>ApexTrigger</name>
+  </types>
+
+  <!-- LWC bundles -->
+  <types>
+    <members>trainingMgmtExplorer</members>
+    <name>LightningComponentBundle</name>
+  </types>
+
+  <!-- Custom objects (fields, validation rules, list views, etc. come along) -->
+  <types>
+    <members>Training__c</members>
+    <members>Training_Enrollment__c</members>
+    <name>CustomObject</name>
+  </types>
+
+  <!-- Page Layouts (exact labels) -->
+  <types>
+    <members>Training__c-Training Layout</members>
+    <members>Training_Enrollment__c-Training Enrollment Layout</members>
+    <name>Layout</name>
+  </types>
+
+  <!-- Sharing Rules (by object) -->
+  <types>
+    <members>Training__c</members>
+    <members>Training_Enrollment__c</members>
+    <name>SharingRules</name>
+  </types>
+
+  <!-- Permission Sets -->
+  <types>
+    <members>Manage_All_Trainings</members>
+    <members>Training_App_Access</members>
+    <name>PermissionSet</name>
+  </types>
+
+  <!-- Lightning App Page hosting the LWC -->
+  <types>
+    <members>Training_Explorer</members>
+    <name>FlexiPage</name>
+  </types>
+
+  <!-- Tabs: object tabs + app page tab -->
+  <types>
+    <members>Training__c</members>
+    <members>Training_Enrollment__c</members>
+    <members>Training_Explorer</members>
+    <name>CustomTab</name>
+  </types>
+
+  <!-- Role referenced by sharing rules -->
+  <types>
+    <members>SVPHumanResources</members>
+    <name>Role</name>
+  </types>
+
+  <version>64.0</version>
+</Package>
